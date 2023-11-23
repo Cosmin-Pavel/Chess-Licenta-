@@ -88,3 +88,37 @@ class GameState():
                     best_move = future_fen
 
             return best_move, best_value
+
+    @staticmethod
+    def minimax_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True):
+        if depth == 0:
+            return fen, GameState.evaluate_fen(fen)
+
+        if maximizing_player:
+            best_move = None
+            best_value = float('-inf')
+
+            for future_fen in GameState.generate_future_positions(fen):
+                _, value =  GameState.minimax_alpha_beta(future_fen, depth - 1, alpha, beta, False)
+                if value > best_value:
+                    best_value = value
+                    best_move = future_fen
+
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break  # Pruning
+            return best_move, best_value
+        else:
+            best_move = None
+            best_value = float('inf')
+
+            for future_fen in GameState.generate_future_positions(fen):
+                _, value =  GameState.minimax_alpha_beta(future_fen, depth - 1, alpha, beta, True)
+                if value < best_value:
+                    best_value = value
+                    best_move = future_fen
+
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break  # Pruning
+            return best_move, best_value
