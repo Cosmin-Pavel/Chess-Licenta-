@@ -3,7 +3,7 @@ import chess
 
 class GameState():
     def __init__(self):
-        self.board = "nrbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.white_to_move = True
 
 
@@ -16,7 +16,7 @@ class GameState():
             'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 0
         }
 
-        # Split the FEN string into its components
+
         parts = fen.split()
 
         if len(parts) != 6:
@@ -91,6 +91,7 @@ class GameState():
 
     @staticmethod
     def minimax_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True):
+
         if depth == 0:
             return fen, GameState.evaluate_fen(fen)
 
