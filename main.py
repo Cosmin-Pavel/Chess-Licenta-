@@ -1,11 +1,13 @@
 import random
 import time
-
+import torch
+import numpy as np
 import chess
 import ChessEngine
 from fentoboardimage import fenToImage, loadPiecesFolder
 from PIL import Image, ImageTk
 import tkinter as tk
+from model import Net
 
 class ChessGame:
     def __init__(self):
@@ -63,6 +65,11 @@ class ChessGame:
             self.drag_data = {}
 
     def game_loop(self):
+        model = torch.load('chessModel.pth')
+        model.eval()  # Set the model to evaluation mode
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Using device:", device)
 
         while not self.gs.board.is_game_over():
             if self.gs.white_to_move:
@@ -71,13 +78,13 @@ class ChessGame:
                 self.root.after(100)
             else:
 
-                self.play_black_turn()
+                self.play_black_turn(model)
                 self.root.update()
                 self.root.after(100)
 
         print("Joc încheiat")
 
-    def play_black_turn(self):
+    def play_black_turn(self,model):
 
         if not self.gs.white_to_move:
             start_time = time.time()
@@ -85,7 +92,7 @@ class ChessGame:
                 self.gs.board.fen(), depth=3, alpha=float('-inf'), beta=float('inf'), maximizing_player=True)
             end_time = time.time()
 
-
+            print(best_move)
             self.gs.board.set_fen(best_move)
             self.gs.white_to_move = not self.gs.white_to_move
             self.update_board()

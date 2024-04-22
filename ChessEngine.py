@@ -1,4 +1,7 @@
 import chess
+import torch
+import numpy as np
+from model import fen_to_bit_vector
 
 
 class GameState():
@@ -123,3 +126,57 @@ class GameState():
                 if beta <= alpha:
                     break  # Pruning
             return best_move, best_value
+
+    @staticmethod
+    def model_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True, model=None):
+        if depth == 0:
+            # If depth is 0, return the evaluation of the board position using the model
+            return fen, GameState.evaluate_board(fen, model)
+
+        if maximizing_player:
+            best_move = None
+            best_value = float('-inf')
+
+            for future_fen in GameState.generate_future_positions(fen):
+                _, value = GameState.model_alpha_beta(future_fen, depth - 1, alpha, beta, False, model)
+                if value > best_value:
+                    best_value = value
+                    best_move = future_fen
+
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break  # Pruning
+            return best_move, best_value
+        else:
+            best_move = None
+            best_value = float('inf')
+
+            for future_fen in GameState.generate_future_positions(fen):
+                _, value = GameState.model_alpha_beta(future_fen, depth - 1, alpha, beta, True, model)
+                if value < best_value:
+                    best_value = value
+                    best_move = future_fen
+
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break  # Pruning
+            return best_move, best_value
+
+    def evaluate_board(fen, model):
+
+
+        # Convert input features to a tensor
+        input_tensor = torch.tensor(fen_to_bit_vector(fen), dtype=torch.float32)
+
+        input_tensor = input_tensor.to(next(model.parameters()).device)
+        # Add batch dimension
+        input_tensor = input_tensor.unsqueeze(0)
+
+        # Pass input through the model
+        with torch.no_grad():
+            output = model(input_tensor)
+
+        # Convert output to a scalar value
+        value = output.item()
+
+        return value
