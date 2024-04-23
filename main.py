@@ -88,8 +88,8 @@ class ChessGame:
 
         if not self.gs.white_to_move:
             start_time = time.time()
-            best_move, _ = ChessEngine.GameState.minimax_alpha_beta(
-                self.gs.board.fen(), depth=3, alpha=float('-inf'), beta=float('inf'), maximizing_player=True)
+            best_move, _ = ChessEngine.GameState.model_alpha_beta(
+                self.gs.board.fen(), depth=3, alpha=float('-inf'), beta=float('inf'), maximizing_player=True,model= model)
             end_time = time.time()
 
             print(best_move)

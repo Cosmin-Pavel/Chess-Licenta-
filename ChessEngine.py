@@ -131,7 +131,10 @@ class GameState():
     def model_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True, model=None):
         if depth == 0:
             # If depth is 0, return the evaluation of the board position using the model
-            return fen, GameState.evaluate_board(fen, model)
+            _, score = fen, GameState.evaluate_board(fen, model)
+            # Always negate the score because the model evaluates from the white's perspective
+            score = -score
+            return fen, score
 
         if maximizing_player:
             best_move = None
