@@ -4,21 +4,18 @@ import numpy as np
 from model import fen_to_bit_vector
 
 
-class GameState():
+class GameState:
     def __init__(self):
         self.board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.board = chess.Board(self.board)
         self.white_to_move = True
 
-
-
-#Functie provizorie de evaluare
     @staticmethod
     def evaluate_fen(fen):
         piece_values = {
             'P': -10, 'N': -30, 'B': -30, 'R': -50, 'Q': -90, 'K': 0,
             'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 0
         }
-
 
         parts = fen.split()
 
@@ -29,19 +26,14 @@ class GameState():
 
         board_score = 0
 
-
         for char in board_layout:
             piece_value = piece_values.get(char, 0)
             board_score += piece_value
-
-
-
 
         if turn == 'w':
             board_score += 20
         else:
             board_score -= 20
-
 
         if 'K' in castling:
             board_score += 10
@@ -52,6 +44,7 @@ class GameState():
 
     @staticmethod
     def generate_future_positions(fen):
+
         board = chess.Board(fen)
         future_positions = []
 
@@ -59,73 +52,44 @@ class GameState():
         for move in legal_moves:
             board_copy = board.copy()
             board_copy.push(move)
-            future_positions.append(board_copy.fen())
+            future_positions.append((board_copy.fen(), move))
 
         return future_positions
-
-
-    @staticmethod
-    def minimax(fen, depth, maximizing_player=True):
-        if depth == 0:
-            return fen, GameState.evaluate_fen(fen)
-
-        if maximizing_player:
-            best_move = None
-            best_value = float('-inf')
-
-            for future_fen in GameState.generate_future_positions(fen):
-                _, value = GameState.minimax(future_fen, depth - 1, False)
-                if value > best_value:
-                    best_value = value
-                    best_move = future_fen
-
-            return best_move, best_value
-        else:
-            best_move = None
-            best_value = float('inf')
-
-            for future_fen in GameState.generate_future_positions(fen):
-                _, value = GameState.minimax(future_fen, depth - 1, True)
-                if value < best_value:
-                    best_value = value
-                    best_move = future_fen
-
-            return best_move, best_value
 
     @staticmethod
     def minimax_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True):
 
         if depth == 0:
-            return fen, GameState.evaluate_fen(fen)
+            return fen, None, GameState.evaluate_fen(fen)
 
         if maximizing_player:
             best_move = None
             best_value = float('-inf')
 
-            for future_fen in GameState.generate_future_positions(fen):
-                _, value =  GameState.minimax_alpha_beta(future_fen, depth - 1, alpha, beta, False)
+            for future_fen, move in GameState.generate_future_positions(fen):
+                _, _, value = GameState.minimax_alpha_beta(future_fen, depth - 1, alpha, beta, False)
                 if value > best_value:
                     best_value = value
-                    best_move = future_fen
+                    best_move = move
 
                 alpha = max(alpha, best_value)
                 if beta <= alpha:
                     break  # Pruning
-            return best_move, best_value
+            return fen, best_move, best_value
         else:
             best_move = None
             best_value = float('inf')
 
-            for future_fen in GameState.generate_future_positions(fen):
-                _, value =  GameState.minimax_alpha_beta(future_fen, depth - 1, alpha, beta, True)
+            for future_fen, move in GameState.generate_future_positions(fen):
+                _, _, value = GameState.minimax_alpha_beta(future_fen, depth - 1, alpha, beta, True)
                 if value < best_value:
                     best_value = value
-                    best_move = future_fen
+                    best_move = move
 
                 beta = min(beta, best_value)
                 if beta <= alpha:
                     break  # Pruning
-            return best_move, best_value
+            return fen, best_move, best_value
 
     @staticmethod
     def model_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True, model=None):
@@ -134,39 +98,38 @@ class GameState():
             _, score = fen, GameState.evaluate_board(fen, model)
             # Always negate the score because the model evaluates from the white's perspective
             score = -score
-            return fen, score
+            return fen, None, score
 
         if maximizing_player:
             best_move = None
             best_value = float('-inf')
 
-            for future_fen in GameState.generate_future_positions(fen):
-                _, value = GameState.model_alpha_beta(future_fen, depth - 1, alpha, beta, False, model)
+            for future_fen,move in GameState.generate_future_positions(fen):
+                _, _, value = GameState.model_alpha_beta(future_fen, depth - 1, alpha, beta, False, model)
                 if value > best_value:
                     best_value = value
-                    best_move = future_fen
+                    best_move = move
 
                 alpha = max(alpha, best_value)
                 if beta <= alpha:
                     break  # Pruning
-            return best_move, best_value
+            return fen, best_move, best_value
         else:
             best_move = None
             best_value = float('inf')
 
-            for future_fen in GameState.generate_future_positions(fen):
-                _, value = GameState.model_alpha_beta(future_fen, depth - 1, alpha, beta, True, model)
+            for future_fen,move in GameState.generate_future_positions(fen):
+                _, _, value = GameState.model_alpha_beta(future_fen, depth - 1, alpha, beta, True, model)
                 if value < best_value:
                     best_value = value
-                    best_move = future_fen
+                    best_move = move
 
                 beta = min(beta, best_value)
                 if beta <= alpha:
                     break  # Pruning
-            return best_move, best_value
+            return fen, best_move, best_value
 
     def evaluate_board(fen, model):
-
 
         # Convert input features to a tensor
         input_tensor = torch.tensor(fen_to_bit_vector(fen), dtype=torch.float32)
