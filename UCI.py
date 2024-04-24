@@ -1,8 +1,12 @@
+import chess
+import torch
 from ChessEngine import GameState
-
+from model import Net
 class UCI:
     ENGINENAME = "CozminCrimaEngine"
     game_state = GameState()
+    model = torch.load("../../chessModel.pth")
+    model.eval()  # Set the model to evaluation mode
 
     @staticmethod
     def uci_communication():
@@ -80,19 +84,24 @@ class UCI:
             moves = tokens[moves_index:]
 
             # Set up the position on the board and play the moves
-            UCI.game_state.board = fen
+
+            board = chess.Board(fen)
+            UCI.game_state.board = board
             for move in moves:
                 UCI.game_state.board.push_uci(move)
+            print("BOARD: ", UCI.game_state.board)
         except Exception as e:
             print("Error:", e)
 
     @staticmethod
     def input_go(input_string):
         try:
-            print("UCI board: ", UCI.game_state.board)
-            best_move,  best_actual_move, _ = GameState.minimax_uci(UCI.game_state.board, 3)
-            print("bestactualmove:", best_actual_move)
-
+            fen_string = UCI.game_state.board.fen()
+            side_to_move = fen_string.split()[1]
+            if (side_to_move == 'w'):
+                UCI.game_state.is_playing_Black=False
+            pass
+            _,  best_move, _ = GameState.minimax_alpha_beta(UCI.game_state.board.fen(),depth=3, alpha=float('-inf'), beta=float('inf'), maximizing_player=True,is_playing_Black=UCI.game_state.is_playing_Black)
             # Print the best move
             print("bestmove", best_move)
         except Exception as e:

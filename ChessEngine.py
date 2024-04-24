@@ -9,6 +9,7 @@ class GameState:
         self.board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.board = chess.Board(self.board)
         self.white_to_move = True
+        self.is_playing_Black = True;
 
     @staticmethod
     def evaluate_fen(fen):
@@ -57,10 +58,12 @@ class GameState:
         return future_positions
 
     @staticmethod
-    def minimax_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True):
-
-        if depth == 0:
-            return fen, None, GameState.evaluate_fen(fen)
+    def minimax_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True,is_playing_Black=True):
+        if depth == 0 or GameState.generate_future_positions(fen) == []:
+            score = GameState.evaluate_fen(fen)
+            if is_playing_Black:
+                score = -score
+            return fen, None, score
 
         if maximizing_player:
             best_move = None
@@ -92,12 +95,11 @@ class GameState:
             return fen, best_move, best_value
 
     @staticmethod
-    def model_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True, model=None):
-        if depth == 0:
-            # If depth is 0, return the evaluation of the board position using the model
+    def model_alpha_beta(fen, depth, alpha=float('-inf'), beta=float('inf'), maximizing_player=True, model=None,is_playing_Black=True):
+        if depth == 0 or GameState.generate_future_positions(fen) == []:
             _, score = fen, GameState.evaluate_board(fen, model)
-            # Always negate the score because the model evaluates from the white's perspective
-            score = -score
+            if is_playing_Black:
+                score = -score
             return fen, None, score
 
         if maximizing_player:

@@ -1,4 +1,3 @@
-
 import random
 import time
 import torch
@@ -23,9 +22,6 @@ class ChessGame:
         self.drag_data = {}
         self.create_ui()
 
-
-
-
     def create_ui(self):
 
         self.boardImage = fenToImage(
@@ -42,7 +38,6 @@ class ChessGame:
         self.label.bind("<ButtonPress-1>", self.on_drag_start)
         self.label.bind("<ButtonRelease-1>", self.on_drag_end)
         self.game_loop()
-
 
     def on_drag_start(self, event):
 
@@ -83,12 +78,12 @@ class ChessGame:
                 self.root.after(100)
         print("Joc încheiat")
 
-    def play_black_turn(self,model):
+    def play_black_turn(self, model):
 
         if not self.gs.white_to_move:
             old_position = self.gs.board.fen()
             _, best_move, _ = ChessEngine.GameState.model_alpha_beta(
-                old_position, depth=3, alpha=float('-inf'), beta=float('inf'), maximizing_player=True,model=model)
+                old_position, depth=3, alpha=float('-inf'), beta=float('inf'), maximizing_player=True, model=model, is_playing_Black=True)
 
             # Apply the best move to the old position
             board_copy = chess.Board(old_position)
